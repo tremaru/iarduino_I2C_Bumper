@@ -1,0 +1,43 @@
+#	####################################################
+#	СИНТАКСИЧЕСКАЯ РАСКРАСКА ДЛЯ БИБИЛИОТЕКИ:
+#	iarduino_I2C_Bumper
+#	####################################################
+#	ТИПЫ ДАННЫХ:							   (KEYWORD1)
+	iarduino_I2C_Bumper	KEYWORD1
+#	####################################################
+#	МЕТОДЫ И ФУНКЦИИ:						   (KEYWORD2)
+	begin	KEYWORD2
+	changeAddress	KEYWORD2
+	reset	KEYWORD2
+	getAddress	KEYWORD2
+	getVersion	KEYWORD2
+	setLamp	KEYWORD2
+	setTurnSignal	KEYWORD2
+	setTurnPeriod	KEYWORD2
+	settingsTurnAuto	KEYWORD2
+	setCalibrationAuto	KEYWORD2
+	setCalibrationManual	KEYWORD2
+	getLineDigital	KEYWORD2
+	getLineAnalog	KEYWORD2
+	getLineType	KEYWORD2
+	
+#	####################################################
+#	КОНСТАНТЫ:								   (LITERAL1)
+	BUM_TURN_OFF	LITERAL1
+	BUM_TURN_LEFT	LITERAL1
+	BUM_TURN_RIGHT	LITERAL1
+	BUM_TURN_EMERGENCY	LITERAL1
+	BUM_TURN_POLICE	LITERAL1
+	BUM_TURN_AUTO	LITERAL1
+	BUM_TURN_100	LITERAL1
+	BUM_TURN_200	LITERAL1
+	BUM_TURN_400	LITERAL1
+	BUM_TURN_800	LITERAL1
+	BUM_AUTO_ON_1	LITERAL1
+	BUM_AUTO_ON_2	LITERAL1
+	BUM_AUTO_ON_3	LITERAL1
+	BUM_AUTO_OFF_ANY	LITERAL1
+	BUM_AUTO_OFF_CEN	LITERAL1
+	BUM_LINE_ALL	LITERAL1
+	BUM_LINE_WHITE	LITERAL1
+	BUM_LINE_BLACK	LITERAL1
