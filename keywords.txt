@@ -15,11 +15,14 @@
 	setTurnSignal	KEYWORD2
 	setTurnPeriod	KEYWORD2
 	settingsTurnAuto	KEYWORD2
-	setCalibrationAuto	KEYWORD2
+	setCalibrationRun	KEYWORD2
+	setCalibrationEnd	KEYWORD2
 	setCalibrationManual	KEYWORD2
+	getCalibrationStage	KEYWORD2
 	getLineDigital	KEYWORD2
 	getLineAnalog	KEYWORD2
 	getLineType	KEYWORD2
+	setLineType	KEYWORD2
 	
 #	####################################################
 #	КОНСТАНТЫ:								   (LITERAL1)
@@ -41,3 +44,9 @@
 	BUM_LINE_ALL	LITERAL1
 	BUM_LINE_WHITE	LITERAL1
 	BUM_LINE_BLACK	LITERAL1
+	BUM_LINE_CHANGE	LITERAL1
+	BUM_STAGE_OFF_OK	LITERAL1
+	BUM_STAGE_OFF_ERR	LITERAL1
+	BUM_STAGE_READ_LN	LITERAL1
+	BUM_STAGE_WAITING	LITERAL1
+	BUM_STAGE_READ_BG	LITERAL1
