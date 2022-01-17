@@ -24,6 +24,7 @@
 	getLineDigital	KEYWORD2
 	getLineAnalog	KEYWORD2
 	getErrPID	KEYWORD2
+	getSidePID	KEYWORD2
 	getCross	KEYWORD2
 	getLineSum	KEYWORD2
 	getLineType	KEYWORD2
