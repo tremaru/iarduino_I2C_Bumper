@@ -1,7 +1,7 @@
 //	Библиотека для работы с Trema-модулем Бампер с 9 датчиками линий, I2C-flash для Arduino:
 //  - с шагом 14мм: https://iarduino.ru/shop/Expansion-payments/bamper-s-7-datchikami-liniy-i2c---flash.html
 //  - с шагом 7мм: https://iarduino.ru/shop/Sensory-Datchiki/bamper-s-9-datchikami-liniy-s-shagom-7mm-flash-i2c.html
-//  Версия: 1.0.5
+//  Версия: 1.0.6
 //  Последнюю версию библиотеки Вы можете скачать по ссылке: https://iarduino.ru/file/519.html
 //  Подробное описание функций бибилиотеки доступно по ссылке: https://wiki.iarduino.ru/page/line-bumper/
 //  Библиотека является собственностью интернет магазина iarduino.ru и может свободно использоваться и распространяться!
