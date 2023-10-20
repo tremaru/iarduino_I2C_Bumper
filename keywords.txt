@@ -20,6 +20,7 @@
 	setCalibrationRun	KEYWORD2
 	setCalibrationEnd	KEYWORD2
 	setCalibrationManual	KEYWORD2
+	getCalibrationManual	KEYWORD2
 	getCalibrationStage	KEYWORD2
 	getLineDigital	KEYWORD2
 	getLineAnalog	KEYWORD2
