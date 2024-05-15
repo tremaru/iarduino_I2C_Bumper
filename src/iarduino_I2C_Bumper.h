@@ -1,7 +1,7 @@
 //	Библиотека для работы с Trema-модулем Бампер с 9 датчиками линий, I2C-flash для Arduino:
 //  - с шагом 14мм: https://iarduino.ru/shop/Expansion-payments/bamper-s-7-datchikami-liniy-i2c---flash.html
 //  - с шагом 7мм: https://iarduino.ru/shop/Sensory-Datchiki/bamper-s-9-datchikami-liniy-s-shagom-7mm-flash-i2c.html
-//  Версия: 1.0.7
+//  Версия: 1.0.8
 //  Последнюю версию библиотеки Вы можете скачать по ссылке: https://iarduino.ru/file/519.html
 //  Подробное описание функций бибилиотеки доступно по ссылке: https://wiki.iarduino.ru/page/line-bumper/
 //  Библиотека является собственностью интернет магазина iarduino.ru и может свободно использоваться и распространяться!
@@ -19,7 +19,14 @@
 #include		<WProgram.h>																												//
 #endif																																		//
 																																			//
-#include		<iarduino_I2C_Bumper_I2C.h>																									//	Подключаем файл iarduino_I2C_Bumper.h - для работы с шиной I2C		(используя функции структуры iI2C)
+#include		"iarduino_I2C_Bumper_I2C.h"																									//	Подключаем библиотеку выбора реализации шины I2C.
+																																			//
+#if defined(TwoWire_h) || defined(__ARDUINO_WIRE_IMPLEMENTATION__) || defined(__AVR_ATmega328__) || defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega1284P__) || defined(__AVR_ATmega2560__) || defined(ESP8266) || defined(ESP32) || defined(ARDUINO_ARCH_RP2040) || defined(RENESAS_CORTEX_M4) // Если подключена библиотека Wire или платы её поддерживают...
+#include		<Wire.h>																													//	Разрешаем использовать библиотеку Wire в данной библиотеке.
+#endif																																		//
+#if defined( iarduino_I2C_Software_h )																										//	Если библиотека iarduino_I2C_Software подключена в скетче...
+#include		<iarduino_I2C_Software.h>																									//	Разрешаем использовать библиотеку iarduino_I2C_Software в данной библиотеке.
+#endif																																		//
 																																			//
 #define			DEF_CHIP_ID_FLASH			0x3C																							//	ID линейки чипов - константа для всех чипов серии Flash (позволяет идентифицировать принадлежность чипа к серии).
 #define			DEF_CHIP_ID_METRO			0xC3																							//	ID линейки чипов - константа для всех чипов серии Metro (позволяет идентифицировать принадлежность чипа к серии).
@@ -156,10 +163,15 @@ class iarduino_I2C_Bumper{																													//
 		iarduino_I2C_Bumper								(uint8_t address=0){																//	Конструктор класса													(Параметр: адрес модуля на шине I2C, если не указан (=0), то адрес будет определён).
 															if(address>0x7F){ address>>=1; }												//	Корректируем адрес, если он указан с учётом бита RW.
 								valAddrTemp				=	address;																		//	Сохраняем переданный адрес модуля.
-								objI2C					=	new iarduino_I2C;																//	Переопределяем указатель objI2C на объект производного класса iarduino_I2C.
+								selI2C					=	new iarduino_I2C_Select;														//	Переопределяем указатель selI2C на объект производного класса iarduino_I2C_Select.
 		}																																	//
 	/**	Пользовательские функции **/																										//
-		bool					begin					(void							);													//	Объявляем  функцию инициализации модуля								(Параметр:  отсутствует).
+		#if defined(TwoWire_h) || defined(__ARDUINO_WIRE_IMPLEMENTATION__)																	//
+		bool					begin					(TwoWire* i=&Wire ){ selI2C->begin(i); return _begin(); }							//	Определяем функцию инициализации модуля								(Параметр:  объект для работы с аппаратной шиной I2C).
+		#endif																																//
+		#if defined(iarduino_I2C_Software_h)																								//
+		bool					begin					(SoftTwoWire* i   ){ selI2C->begin(i); return _begin(); }							//	Определяем функцию инициализации модуля								(Параметр:  объект для работы с программной шиной I2C).
+		#endif																																//
 		bool					reset					(void							);													//	Объявляем  функцию перезагрузки модуля								(Параметр:  отсутствует).
 		bool					changeAddress			(uint8_t adr					);													//	Объявляем  функцию смены адреса модуля на шине I2C					(Параметр:  новый адрес модуля).
 		uint8_t					getAddress				(void							){ return valAddr;	}								//	Определяем функцию возвращающую текущий адрес модуля на шине I2C	(Параметр:  отсутствует).
@@ -187,6 +199,7 @@ template<typename T> uint8_t	getLineSum				(T &a){uint8_t i,j=0; a=(T)getLineDig
 		bool					setLineType				(uint8_t color					);													//	Объявляем  функцию установки типа линии трассы						(Параметр:  тип линии).
 	private:																																//
 	/**	Внутренние переменные **/																											//
+		iarduino_I2C_VirtualSelect* selI2C;																									//	Объявляем  указатель  на  объект полиморфного класса iarduino_I2C_VirtualSelect, но в конструкторе текущего класса этому указателю будет присвоена ссылка на производный класс iarduino_I2C_Select.
 		uint8_t					valAddrTemp				=	0;																				//	Определяем переменную для хранения адреса модуля на шине I2C который был указан, но не был проверен.
 		uint8_t					valAddr					=	0;																				//	Определяем переменную для хранения адреса модуля на шине I2C.
 		uint8_t					valVers					=	0;																				//	Определяем переменную для хранения версии прошивки модуля.
@@ -196,8 +209,8 @@ template<typename T> uint8_t	getLineSum				(T &a){uint8_t i,j=0; a=(T)getLineDig
 		bool					flg_Cross				=	false;																			//	Определяем переменную для хранения флага обнаружения перекрёстка.
 		uint32_t				tmr_Cross;																									//	Объявляем  переменную для хранения времени обнаружения перекрёстка.
 		uint8_t					data[18];																									//	Объявляем  массив     для хранения получаемых/передаваемых данных.
-		iarduino_I2C_BASE*		objI2C;																										//	Объявляем  указатель  на  объект полиморфного класса iarduino_I2C_BASE, но в конструкторе данного класса этому указателю будет присвоена ссылка на производный класс iarduino_I2C.
 	/**	Внутренние функции **/																												//
+		bool					_begin					(void								);												//	Объявляем  функцию инициализации модуля								(Параметр:  отсутствует).
 		bool					_readBytes				(uint8_t	, uint8_t				);												//	Объявляем  функцию чтения данных в  массив  data					(Параметры:  номер первого регистра, количество байт).
 		bool					_writeBytes				(uint8_t	, uint8_t, uint8_t=0	);												//	Объявляем  функцию записи данных из массива data					(Параметры:  номер первого регистра, количество байт, номер первого элемента массива data).
 };																																			//
