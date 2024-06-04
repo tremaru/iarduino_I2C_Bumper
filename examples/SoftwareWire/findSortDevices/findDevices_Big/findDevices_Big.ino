@@ -1,6 +1,6 @@
 // ДАННЫЙ ПРИМЕР ИЩЕТ ВСЕ МОДУЛИ НА ШИНЕ I2C И ВЫВОДИТ ИНФОРМАЦИЮ О НИХ.    // * Строки со звёздочкой являются необязательными.
-// Требуется установить библиотеку <iarduino_I2C_Software.h>                //
-// Требуется установить библиотеку <iarduino_I2C_Address.h>                 //
+// Требуется установить библиотеку <iarduino_I2C_Software.h>                //   https://iarduino.ru/file/627.html
+// Требуется установить библиотеку <iarduino_I2C_Address.h>                 //   https://iarduino.ru/file/558.html
 //                                                                          //
 // - Пример findDevices_Small  выводит короткую информацию о модулях.       //
 // - Пример findDevices_Medium выводит количество и информацию о модулях.   //
@@ -9,7 +9,7 @@
 const uint8_t sum = 10;                                                     //   Определяем количество модулей на шине I2C. Допускается указывать значение превышающее реальное количество модулей.
                                                                             //
 #include <iarduino_I2C_Software.h>                                          //   Подключаем библиотеку для работы с программной шиной I2C, до подключения библиотеки iarduino_I2C_Address.
-SoftTwoWire sWire(3,4);                                                     //   Объявляем  объект программной шины I2C указав выводы которым будет назначена роль линий: SDA, SCL.
+SoftTwoWire sWire(3,4);                                                     //   Создаём объект программной шины I2C указав выводы которым будет назначена роль линий: SDA, SCL.
                                                                             //
 #include <iarduino_I2C_Address.h>                                           //   Подключаем библиотеку для работы с адресами модулей линейки I2C-flash.
 iarduino_I2C_Address obj[sum];                                              //   Объявляем  массив объектов (obj), указав количество (sum) модулей I2C-flash на шине I2C. Адреса модулей будут определены автоматически.
@@ -63,9 +63,10 @@ void setup(){                                                               //
          if( obj[num].getDevice()==DEVICE_I2C_FLASH                         //
          ||  obj[num].getDevice()==DEVICE_I2C_FLASH_OLD ){                  //
          //  Выводим название модуля:                                       //
-             String str=obj[num].getName();                                 //   Читаем название из модуля в строку str.
-             if( str.length()==0 ){ str=fncName( obj[num].getModel() ); }   //   Если строка str пустая, то подбираем название функцией fncName().
-             Serial.print( (String) "Модуль «"+str+"»"     );               // *
+             Serial.print( F("Модуль Flash I2C ")          );               // *
+             String str=obj[num].getName();                                 // * Читаем название из модуля в строку str.
+             if( str.length()==0 ){ str=fncName( obj[num].getModel() ); }   // * Если строка str пустая, то подбираем название функцией fncName().
+             Serial.print( (String) "«"+str+"»"            );               // *
          //  Выводим адрес модуля на шине I2C:                              //
              Serial.print( F(", адрес на шине I2C = 0x")   );               // 
              Serial.print( obj[num].getAddress(), HEX      );               // 
@@ -105,7 +106,7 @@ void loop(){                                                                //
                                                                             //
 //     Функция подбора названия модуля по его идентификатору:               //
 String fncName(uint8_t mod){                                                //
-       String result="";                                                    //
+       String     result = F("Без названия"                       );        //   Определяем строку для вывода названия модуля.
        switch( mod ){                                                       //   Сравниваем номер модели модуля ...
        case 0x01: result = F("Кнопка"                             ); break; //   Если номер модели модуля равен 0x01, значит это кнопка.
        case 0x02: result = F("Светодиод"                          ); break; //   Если номер модели модуля равен 0x02, значит это RGB светодиод.

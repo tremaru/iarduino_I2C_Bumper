@@ -1,5 +1,5 @@
 // ДАННЫЙ ПРИМЕР ИЩЕТ ВСЕ МОДУЛИ НА ШИНЕ I2C И ВЫВОДИТ ИНФОРМАЦИЮ О НИХ.    // * Строки со звёздочкой являются необязательными.
-// Требуется установить библиотеку <iarduino_I2C_Address.h>                 //
+// Требуется установить библиотеку <iarduino_I2C_Address.h>                 //   https://iarduino.ru/file/558.html
 //                                                                          //
 // - Пример findDevices_Small  выводит короткую информацию о модулях.       //
 // - Пример findDevices_Medium выводит количество и информацию о модулях.   //
@@ -58,9 +58,9 @@ void setup(){                                                               //
              if( obj[i].getDevice()==DEVICE_I2C_FLASH                       //
              ||  obj[i].getDevice()==DEVICE_I2C_FLASH_OLD ){                //
              //  Выводим название модуля:                                   //
-                 Serial.print( F("Модуль «")                   );           // *
-                 Serial.print( obj[i].getName()                );           // *
-                 Serial.print( F("»")                          );           // *
+                 Serial.print( F("Модуль Flash I2C")           );           // *
+                 if( obj[i].getDevice()==DEVICE_I2C_FLASH )                 // * Если модуль Flash I2C поддерживает вывод своего названия, то ...
+                 Serial.print((String)" «"+obj[i].getName()+"»");           // * Выводим название модуля.
              //  Выводим адрес модуля на шине I2C:                          //
                  Serial.print( F(", адрес на шине I2C = 0x")   );           // 
                  Serial.print( obj[i].getAddress(), HEX        );           // 
