@@ -11,7 +11,7 @@ const uint8_t start = 0x20;                                                 //  
                                                                             //
 #include <Wire.h>                                                           //   Подключаем библиотеку для работы с аппаратной шиной I2C, до подключения библиотеки iarduino_I2C_Address.
 #include <iarduino_I2C_Address.h>                                           //   Подключаем библиотеку для работы с адресами модулей линейки I2C-flash.
-iarduino_I2C_SortAddress all;                                               //   Объявляем  объект (all) для сортировки адресов.
+iarduino_I2C_SortAddress all;                                               //   Создаём    объект (all) для сортировки адресов.
                                                                             //
 void setup(){                                                               //
      delay(500);                                                            // * Ждём завершение переходных процессов связанных с подачей питания.

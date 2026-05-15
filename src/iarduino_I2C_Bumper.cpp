@@ -199,13 +199,14 @@ bool	iarduino_I2C_Bumper::setCalibrationRun	(void){																			//	Пар�
 				data[0] = BUM_CALIBR_RUN;																						//	Сохраняем код запуска калибровки в массив «data».
 			//	Передаём подготовленные данные:																					//
 				if(_writeBytes(REG_BUM_CALIBRATION,1)==false){return false;}													//	Записываем 1 байт в регистр «REG_BUM_CALIBRATION» из массива «data».
+				delay(200);																										//	Устанавливаем задержку достаточную для изменения модулем регистра «REG_BUM_CALIBRATION».
 			//	Ждём завершения калибровки:																						//
-				delay(3000);																									//	Устанавливаем задержку ( 1 сек световой анимации бегущего огня + 0,3 сек восстановления АЦП + 1.5 сек мигания при успехе + 0.03 сек записи в Flash) и того ~2.8 сек.
 				uint8_t	sumtry=10;																								//	Определяем переменную для подсчёта количества оставшихся попыток чтения.
 				while( sumtry>0 ){																								//	Входим в цикл ожидания завершения калибровки.
-					if( _readBytes(REG_BUM_CALIBRATION, 1) == false ){return false;}											//	Читаем 1 байт регистра «REG_BUM_CALIBRATION» в массив «data».
+					data[0]=0; _readBytes(REG_BUM_CALIBRATION, 1);																//	Читаем 1 байт регистра «REG_BUM_CALIBRATION» в массив «data».
 					if( (data[0] & BUM_STAGE_CALIBRATION) == BUM_STAGE_WAITING ){return true;}									//	Если в регистре «REG_BUM_CALIBRATION» установлена стадия калибровки «BUM_STAGE_WAITING», то возвращаем true.
-					delay(200); sumtry--;																						//	Устанавливаем задержку и уменьшаем количество попыток чтения.
+					if( (data[0] & BUM_STAGE_CALIBRATION) != BUM_STAGE_READ_LN ){sumtry--;}										//	Если не выполняется 1 стадия калибровки (чтение линии), то уменьшаем количество попыток чтения.
+					delay(200);																									//	Устанавливаем задержку.
 				}																												//
 			}	return false;																									//	Возвращаем ошибку.
 }																																//
@@ -218,13 +219,14 @@ bool	iarduino_I2C_Bumper::setCalibrationEnd	(bool f){																		//	Пар
 				else {data[0] = BUM_CALIBR_END;  }																				//	Сохраняем код завершения калибровки в массив «data». Результатом калибровки станет рассчет границ АЦП для каждого датчика модуля.
 			//	Передаём подготовленные данные:																					//
 				if(_writeBytes(REG_BUM_CALIBRATION,1)==false){return false;}													//	Записываем 1 байт в регистр «REG_BUM_CALIBRATION» из массива «data».
+				delay(200);																										//	Устанавливаем задержку достаточную для изменения модулем регистра «REG_BUM_CALIBRATION».
 			//	Ждём завершения калибровки:																						//
-				delay(3000);																									//	Устанавливаем задержку ( 1 сек световой анимации бегущего огня + 0,3 сек восстановления АЦП + 1.5 сек мигания при успехе + 0.03 сек записи в Flash) и того ~2.8 сек.
 				uint8_t	sumtry=10;																								//	Определяем переменную для подсчёта количества оставшихся попыток чтения.
 				while( sumtry>0 ){																								//	Входим в цикл ожидания завершения калибровки.
-					if( _readBytes(REG_BUM_CALIBRATION, 1) == false ){return false;}											//	Читаем 1 байт регистра «REG_BUM_CALIBRATION» в массив «data».
-					if( data[0] & BUM_FLG_CALIBRATION ){return true;}															//	Если в регистре «REG_BUM_CALIBRATION» установлен флаг «BUM_FLG_CALIBRATION», то возвращаем true.
-					delay(200); sumtry--;																						//	Устанавливаем задержку и уменьшаем количество попыток чтения.
+					data[0]=0; _readBytes(REG_BUM_CALIBRATION, 1);																//	Читаем 1 байт регистра «REG_BUM_CALIBRATION» в массив «data».
+					if(  data[0] & BUM_FLG_CALIBRATION                         ){return true;}									//	Если в регистре «REG_BUM_CALIBRATION» установлен флаг «BUM_FLG_CALIBRATION», то возвращаем true.
+					if( (data[0] & BUM_STAGE_CALIBRATION) != BUM_STAGE_READ_BG ){sumtry--;}										//	Если не выполняется 2 стадия калибровки (чтение фона), то уменьшаем количество попыток чтения.
+					delay(200);																									//	Устанавливаем задержку.
 				}																												//
 			}	return false;																									//	Возвращаем ошибку.
 }																																//
@@ -271,12 +273,12 @@ uint16_t iarduino_I2C_Bumper::getCalibrationManual(uint8_t num){																
 			}	return result;																									//	Возвращаем результат.
 }																																//
 																																//
-//		Получение текущего статуса калибровки модуля:																			//	Возвращаемое значение:	статус (BUM_STAGE_OFF - не выполняется / BUM_STAGE_READ_LN - чтение линии / BUM_STAGE_WAITING - ожидается чтение фона / BUM_STAGE_READ_BG - чтение фона).
+//		Получение текущего статуса калибровки модуля:																			//	Возвращаемое значение:	статус (BUM_STAGE_READ_LN - чтение линии / BUM_STAGE_WAITING - ожидается чтение фона / BUM_STAGE_READ_BG - чтение фона / BUM_STAGE_OFF_OK - успешно завершена / BUM_STAGE_OFF_ERR - не выполнялась или завершена с ошибной).
 uint8_t	iarduino_I2C_Bumper::getCalibrationStage(void){																			//	Параметр:				отсутствует.
-			uint8_t result=0;																									//	Определяем переменную для хранения результата чтения.
+			uint8_t result=BUM_STAGE_OFF_ERR;																					//	Определяем переменную для хранения результата чтения.
 			if(valAddr){																										//	Если модуль был инициализирован, то ...
 			//	Получаем данные:																								//
-				if( _readBytes(REG_BUM_CALIBRATION, 1) == false )	{return 0;}													//	Читаем 1 байт регистра «REG_BUM_CALIBRATION» в массив «data».
+				if( _readBytes(REG_BUM_CALIBRATION, 1) == false ){return BUM_STAGE_OFF_ERR;}									//	Читаем 1 байт регистра «REG_BUM_CALIBRATION» в массив «data».
 			//	Возвращаем результат:																							//
 				result = ( data[0] & (BUM_FLG_CALIBRATION | BUM_STAGE_CALIBRATION) );											//	Получаем значение находящееся в битах «BUM_STAGE_CALIBRATION» регистра «REG_BUM_CALIBRATION».
 			}	return result;																									//	Возвращаем результат.
@@ -380,6 +382,171 @@ bool	iarduino_I2C_Bumper::setLineType	(uint8_t line_type){																//	П�
 					sumtry--;																									//	Уменьшаем количество попыток установки типа линии.
 				}	if(sumtry){return true;}																					//	Возвращаем результат установки типа линии.
 			}	return false;																									//	Возвращаем ошибку.
+}																																//
+																																//
+//		Запуск автоматической калибровки цвета:																					//	Возвращаемое значение:	результат запуска автоматической калибровки (true/false).
+bool	iarduino_I2C_Bumper::setCalibrationRGB(void){																			//	Параметр:				отсутствует.
+			if(valAddr){																										//	Если модуль был инициализирован, то ...
+			//	Готовим данные для передачи:																					//
+				data[0] = BUM_CALIBR_RGB;																						//	Сохраняем код запуска калибровки цвета в массив «data».
+			//	Передаём подготовленные данные:																					//
+				if(_writeBytes(REG_BUM_CALIBRATION,1)==false){return false;}													//	Записываем 1 байт в регистр «REG_BUM_CALIBRATION» из массива «data».
+				delay(200);																										//	Устанавливаем задержку достаточную для изменения модулем регистра «REG_BUM_CALIBRATION».
+			//	Возвращаем результат:																							//
+				return true;																									//	Возвращаем успех.
+			}	return false;																									//	Возвращаем ошибку.
+}																																//
+																																//
+//		Ручная калибровка цвета:																								//	Возвращаемое значение:	результат записи калибровочных значений (true/false).
+bool	iarduino_I2C_Bumper::setCalibrationManualRGB(int8_t r1, int8_t g1, int8_t b1, int8_t r2, int8_t g2, int8_t b2, int8_t r3, int8_t g3, int8_t b3){ // Параметры: коэффициенты коррекции яркости цвета	от 0 до ±15 для: R1, G1, B1, R2, G2, B2, R3, G3, B3, где RGB - каналы цвета, 1-левый, 2-средний, 3-правый датчики цвета).
+			if(valAddr){																										//	Если модуль был инициализирован, то ...
+				int8_t k[9]={ r1,g1,b1 , r2,g2,b2 , r3,g3,b3 };
+			//	Проверяем корректность параметров:																				//
+				for(uint8_t i=0; i<9; i++){ if( k[i]<-15 ){ k[i]=-15; } if( k[i]>15 ){ k[i]=15; } k[i]+=15; }					//	Значения параметров должны находиться в диапазоне от 0 до ±15. Сдвигаем значения к диапазону 0...+30.
+			//	Готовим данные для передачи:																					//
+				uint16_t s1 = ((uint16_t)k[0]<<10) | ((uint16_t)k[1]<<5) | (uint16_t)k[2];										//	Коэффициенты коррекции 1 (левого  ) датчика в формате: 0 RRRRR GGGGG BBBBB.
+				uint16_t s2 = ((uint16_t)k[3]<<10) | ((uint16_t)k[4]<<5) | (uint16_t)k[5];										//	Коэффициенты коррекции 2 (среднего) датчика в формате: 0 RRRRR GGGGG BBBBB.
+				uint16_t s3 = ((uint16_t)k[6]<<10) | ((uint16_t)k[7]<<5) | (uint16_t)k[8];										//	Коэффициенты коррекции 3 (правого ) датчика в формате: 0 RRRRR GGGGG BBBBB.
+				data[0] = (uint8_t)  s1;																						//	Готовим младший байт для записи в регистр модуля «REG_BUM_CORRECTION_1_L».
+				data[1] = (uint8_t) (s1>>8);																					//	Готовим старший байт для записи в регистр модуля «REG_BUM_CORRECTION_1_H».
+				data[2] = (uint8_t)  s2;																						//	Готовим младший байт для записи в регистр модуля «REG_BUM_CORRECTION_2_L».
+				data[3] = (uint8_t) (s2>>8);																					//	Готовим старший байт для записи в регистр модуля «REG_BUM_CORRECTION_2_H».
+				data[4] = (uint8_t)  s3;																						//	Готовим младший байт для записи в регистр модуля «REG_BUM_CORRECTION_3_L».
+				data[5] = (uint8_t) (s3>>8);																					//	Готовим старший байт для записи в регистр модуля «REG_BUM_CORRECTION_3_H».
+			//	Передаём подготовленные данные:																					//
+				return _writeBytes(REG_BUM_CORRECTION, 6);																		//	Записываем 6 байт из массива «data» в модуль начиная с регистра «REG_BUM_CORRECTION».
+			}	return false;																									//	Возвращаем ошибку.
+}																																//
+																																//
+//		Получение коэффициентов коррекции яркости цвета для указанного датчика:													//	Возвращаемое значение:	коэффициенты в формате: 0 RRRRR GGGGG BBBBB.
+uint16_t iarduino_I2C_Bumper::getCalibrationManualRGB(uint8_t num, int8_t* r, int8_t* g, int8_t* b){							//	Параметры:				номер датчика (1...3), ссылки на переменные красного, зелёного и синего в которые будут помещены коэффициенты коррекции 0...±15.
+			uint16_t result=0; *r=0; *g=0; *b=0;																				//	Определяем переменную для хранения результата чтения и сбрасываем ссылочные значения.
+			if(valAddr){																										//	Если модуль был инициализирован, то ...
+			//	Проверяем корректность параметра:																				//
+				if(num==0||num>3){return 0;}																					//	Количество датчиков равно 3.
+			//	Получаем данные:																								//
+				if( _readBytes(REG_BUM_CORRECTION + ((num-1)*2), 2) == false ){return 0;}										//	Читаем 2 байта из регистров «REG_BUM_CORRECTION_X_L» и «REG_BUM_CORRECTION_X_H» в массив «data».
+			//	Определяем результат:																							//
+				result=data[1]; result<<=8; result|=data[0]; result&=0x7FFF;													//	Сохраняем оба прочитанных байта в переменную «result» и сбрасываем старший бит (флаг результата калибровки).
+				*r = (int8_t)((result>>10)&0x001F)-15;																			//	Значение коррекции яркости красного R: 0 RRRRR 00000 00000
+				*g = (int8_t)((result>> 5)&0x001F)-15;																			//	Значение коррекции яркости зелёного G: 0 00000 GGGGG 00000
+				*b = (int8_t)((result>> 0)&0x001F)-15;																			//	Значение коррекции яркости синего   B: 0 00000 00000 BBBBB
+			}	return result;																									//	Возвращаем результат.
+}																																//
+																																//
+//		Получение текущего статуса калибровки цвета:																			//	Возвращаемое значение:	статус (BUM_STAGE_READ_COLOR - чтение цвета / BUM_STAGE_OFF_OK - успешно завершена / BUM_STAGE_OFF_ERR - не выполнялась или завершена с ошибной).
+uint8_t	iarduino_I2C_Bumper::getCalibrationStageRGB(void){																		//	Параметр:				отсутствует.
+			if(valAddr){																										//	Если модуль был инициализирован, то ...
+			//	Проверяем стадию выполнения калибровки цвета:																	//
+				if( _readBytes(REG_BUM_CALIBRATION, 1) == false ){return BUM_STAGE_OFF_ERR;}									//	Читаем 1 байт регистра «REG_BUM_CALIBRATION» в массив «data».
+			//	Если калибровка цвета выполняется, возвращаем статус:															//
+				if( (data[0] & BUM_STAGE_CALIBRATION) == BUM_STAGE_READ_COLOR ){ return BUM_STAGE_READ_COLOR; }					//	Получаем значение находящееся в битах «BUM_STAGE_CALIBRATION» регистра «REG_BUM_CALIBRATION».
+			//	Если калибровка цвета не выполняется, проверяем результат:														//	
+				if( _readBytes(REG_BUM_CORRECTION+1, 1) == false ){return BUM_STAGE_OFF_ERR;}									//	Читаем 1 байт (старший) регистра «REG_BUM_CORRECTION» в массив «data».
+			//	Возвращаем результат:																							//
+				return data[0] & BUM_FLG_CALIBRATION;																			//	Возвращаем значение «BUM_STAGE_OFF_OK» или «BUM_STAGE_OFF_ERR».
+			}	return BUM_STAGE_OFF_ERR;																						//	Возвращаем ошибку.
+}																																//
+																																//
+//		Получение аналоговых значений общей яркости цвета и отношения яркости между каналами RGB для указанного датчика цвета:	//	Возвращаемое значение:	яркости цвета в формате: LLLL RRRR GGGG BBBB.
+uint16_t iarduino_I2C_Bumper::getColorAnalog(uint8_t num, uint8_t* l, uint8_t* r, uint8_t* g, uint8_t* b){						//	Параметры:				номер датчика (1...3), ссылки на переменные для получения общей яркости, яркости красного, зелёного и синего.
+			uint16_t result=0; *l=0, *r=0; *g=0; *b=0;																			//	Определяем переменную для хранения результата чтения и сбрасываем ссылочные значения.
+			if(valAddr){																										//	Если модуль был инициализирован, то ...
+			//	Проверяем корректность параметра:																				//
+				if(num==0||num>3){return 0;}																					//	Количество датчиков равно 3.
+			//	Получаем данные:																								//
+				if( _readBytes(REG_BUM_LRGB + ((num-1)*2), 2) == false ){return 0;}												//	Читаем 2 байта из регистров «REG_BUM_LRGB_X_L» и «REG_BUM_LRGB_X_H» в массив «data».
+			//	Определяем результат:																							//
+				result=data[1]; result<<=8; result|=data[0];																	//	Сохраняем оба прочитанных байта в переменную «result».
+				*l = (result>>12)&0x000F;																						//	Значение яркости  L: LLLL 0000 0000 0000
+				*r = (result>> 8)&0x000F;																						//	Значение красного R: 0000 RRRR 0000 0000
+				*g = (result>> 4)&0x000F;																						//	Значение зелёного G: 0000 0000 GGGG 0000
+				*b = (result>> 0)&0x000F;																						//	Значение синего   B: 0000 0000 0000 BBBB
+			}	return result;																									//	Возвращаем результат.
+}																																//
+																																//
+//		Получение цифрового значения соответствующего цвету под указанным датчиком:												//	Возвращаемое значение:	цивра от 0 до 5 соответствующая цвету указанного датчика, или число от 000 до 555 состоящее из 3 цифр для каждого датчика цвета.
+uint16_t iarduino_I2C_Bumper::getColorDigital(uint8_t num){																		//	Параметры:				номер датчика (1...3, или BUM_LINE_ALL).
+			uint8_t result[3];																									//
+			if(valAddr){																										//	Если модуль был инициализирован, то ...
+			//	Проверяем корректность параметра:																				//
+				if(num==0||num>3){ if(num!=BUM_LINE_ALL){return 0;} }															//	Количество датчиков равно 3.
+			//	Получаем данные:																								//
+				if( _readBytes(REG_BUM_COLOR, 1) == false ){return 0;}															//	Читаем 1 байт из регистра «REG_BUM_COLOR» в массив «data».
+			//	Извлекаем цвета датчиков:																						//
+				result[0] = data[0]/36%6;																						//	Цвет под 1 (левым  ) датчиком.
+				result[1] = data[0]/ 6%6;																						//	Цвет под 2 (средним) датчиком.
+				result[2] = data[0]   %6;																						//	Цвет под 3 (правым ) датчиком.
+			//	Возвращаем результат:																							//
+				if( num==BUM_LINE_ALL ){ return ((uint16_t)result[0]*100 + (uint16_t)result[1]*10 + (uint16_t)result[2]); }		//	Возвращаем цвета всех датчиков LCR.
+				else                     return result[num-1];																	//	Возвращаем цвет указанного датчика.
+			}	return 0;																										//	Возвращаем ошибку.
+}																																//
+																																//
+//		Получение максимальной скорости в мм/с																					//	Возвращаемое значение:	скорость в мм/с которую нужно умножить на ширину линии в мм, для определения реальной максимальной скорости движения бампера по указанной линии.
+uint8_t	iarduino_I2C_Bumper::getMaxSpeed	(void){																				//	Параметр:				отсутствует.
+			if(valAddr){																										//	Если модуль был инициализирован, то ...
+				if( _readBytes(REG_BUM_MAX_SPEED, 1) == false ){return 0;}														//	Читаем 1 байт из регистра «REG_BUM_MAX_SPEED» в массив «data».
+				return data[0];																									//	Возвращаем максимальную скорость в мм/с.
+			}	return 0;																										//	Возвращаем ошибку.
+}																																//
+																																//
+//		Указание скорости чтения линий:																							//	Возвращаемое значение:	
+bool	iarduino_I2C_Bumper::setSpeedLine	(uint8_t speed){																	//	Параметр:				одно из значений: BUM_READ_LOW - медленно, BUM_READ_MIDDLE - средняя, BUM_READ_FAST - быстро.
+			if(valAddr){																										//	Если модуль был инициализирован, то ...
+			//	Получаем данные:																								//
+				if( _readBytes(REG_SET_SPEED, 1) == false ){return false;}														//	Читаем 1 байт из регистра «REG_SET_SPEED» в массив «data».
+			//	Готовим данные для передачи:																					//
+				data[0] &= ~BUM_SET_SPEED_LINE;																					//	Стираем биты «BUM_SET_SPEED_LINE» регистра «REG_SET_SPEED».
+				if( speed==BUM_READ_NO		){ return false;						}else										//	Если указано не читать линии       «BUM_READ_NO»    , то возвращаем ошибку.
+				if( speed==BUM_READ_LOW		){ data[0] |= BUM_SPEED_LINE_LOW;		}else										//	Если указано читать линии медленно «BUM_READ_LOW»   , то добавляем биты «BUM_SPEED_LINE_LOW».
+				if( speed==BUM_READ_MIDDLE	){ data[0] |= BUM_SPEED_LINE_MIDDLE;	}else										//	Если указано читать линии средне   «BUM_READ_MIDDLE», то добавляем биты «BUM_SPEED_LINE_MIDDLE».
+				if( speed==BUM_READ_FAST	){ data[0] |= BUM_SPEED_LINE_FAST;		}else										//	Если указано читать линии быстро   «BUM_READ_FAST»  , то добавляем биты «BUM_SPEED_LINE_FAST».
+				{ return false; }																								//	Если указано иное значение, то возвращаем ошибку.
+			//	Передаём подготовленные данные:																					//
+				return _writeBytes(REG_SET_SPEED, 1);																			//	Записываем 1 байт из массива «data» в регистр «REG_SET_SPEED».
+			}	return false;																									//	Возвращаем ошибку.
+}																																//
+																																//
+//		Получение скорости чтения линий:																						//	Возвращаемое значение:	BUM_READ_LOW - медленно, BUM_READ_MIDDLE - средняя, BUM_READ_FAST - быстро.
+uint8_t	iarduino_I2C_Bumper::getSpeedLine	(void){																				//	Параметр:				отсутствует.
+			if(valAddr){																										//	Если модуль был инициализирован, то ...
+				if( _readBytes(REG_SET_SPEED, 1) == false ){return 0;}															//	Читаем 1 байт из регистра «REG_SET_SPEED» в массив «data».
+				data[0] &= BUM_SET_SPEED_LINE;																					//	Оставляем только биты «BUM_SET_SPEED_LINE».
+				if( data[0]==BUM_SPEED_LINE_NO		){ return 0;				}else											//	Если в битах «BUM_SET_SPEED_LINE» находится значение «BUM_SPEED_LINE_NO»    , то возвращаем ошибку.
+				if( data[0]==BUM_SPEED_LINE_LOW		){ return BUM_READ_LOW;		}else											//	Если в битах «BUM_SET_SPEED_LINE» находится значение «BUM_SPEED_LINE_LOW»   , то возвращаем «BUM_READ_LOW».
+				if( data[0]==BUM_SPEED_LINE_MIDDLE	){ return BUM_READ_MIDDLE;	}else											//	Если в битах «BUM_SET_SPEED_LINE» находится значение «BUM_SPEED_LINE_MIDDLE», то возвращаем «BUM_READ_MIDDLE».
+				if( data[0]==BUM_SPEED_LINE_FAST	){ return BUM_READ_FAST;	}												//	Если в битах «BUM_SET_SPEED_LINE» находится значение «BUM_SPEED_LINE_FAST»  , то возвращаем «BUM_READ_FAST».
+			}	return 0;																										//	Возвращаем ошибку.
+}																																//
+																																//
+//		Указание скорости чтения цвета:																							//	Возвращаемое значение:	
+bool	iarduino_I2C_Bumper::setSpeedColor	(uint8_t speed){																	//	Параметр:				одно из значений: BUM_READ_NO - не читать, BUM_READ_LOW - медленно, BUM_READ_FAST - быстро.
+			if(valAddr){																										//	Если модуль был инициализирован, то ...
+			//	Получаем данные:																								//
+				if( _readBytes(REG_SET_SPEED, 1) == false ){return false;}														//	Читаем 1 байт из регистра «REG_SET_SPEED» в массив «data».
+			//	Готовим данные для передачи:																					//
+				data[0] &= ~BUM_SET_SPEED_RGB;																					//	Стираем биты «BUM_SET_SPEED_RGB» регистра «REG_SET_SPEED».
+				if( speed==BUM_READ_NO		){ data[0] |= BUM_SPEED_RGB_NO;			}else										//	Если указано не читать цвет       «BUM_READ_NO»    , то добавляем биты «BUM_SPEED_RGB_NO».
+				if( speed==BUM_READ_LOW		){ data[0] |= BUM_SPEED_RGB_LOW;		}else										//	Если указано читать цвет медленно «BUM_READ_LOW»   , то добавляем биты «BUM_SPEED_RGB_LOW».
+				if( speed==BUM_READ_MIDDLE	){ return false;						}else										//	Если указано читать цвет средне   «BUM_READ_MIDDLE», то возвращаем ошибку.
+				if( speed==BUM_READ_FAST	){ data[0] |= BUM_SPEED_RGB_FAST;		}else										//	Если указано читать цвет быстро   «BUM_READ_FAST»  , то добавляем биты «BUM_SPEED_RGB_FAST».
+				{ return false; }																								//	Если указано иное значение, то возвращаем ошибку.
+			//	Передаём подготовленные данные:																					//
+				return _writeBytes(REG_SET_SPEED, 1);																			//	Записываем 1 байт из массива «data» в регистр «REG_SET_SPEED».
+			}	return false;																									//	Возвращаем ошибку.
+}																																//
+																																//
+//		Получение скорости чтения цвета:																						//	Возвращаемое значение:	BUM_READ_NO - не читать, BUM_READ_LOW - медленно, BUM_READ_FAST - быстро.
+uint8_t	iarduino_I2C_Bumper::getSpeedColor	(void){																				//	Параметр:				отсутствует.
+			if(valAddr){																										//	Если модуль был инициализирован, то ...
+				if( _readBytes(REG_SET_SPEED, 1) == false ){return 0;}															//	Читаем 1 байт из регистра «REG_SET_SPEED» в массив «data».
+				data[0] &= BUM_SET_SPEED_RGB;																					//	Оставляем только биты «BUM_SET_SPEED_RGB».
+				if( data[0]==BUM_SPEED_RGB_NO		){ return BUM_READ_NO;		}else											//	Если в битах «BUM_SET_SPEED_RGB» находится значение «BUM_SPEED_RGB_NO»    , то возвращаем «BUM_READ_NO».
+				if( data[0]==BUM_SPEED_RGB_LOW		){ return BUM_READ_LOW;		}else											//	Если в битах «BUM_SET_SPEED_RGB» находится значение «BUM_SPEED_RGB_LOW»   , то возвращаем «BUM_READ_LOW».
+				if( data[0]==BUM_SPEED_RGB_MIDDLE	){ return 0;				}else											//	Если в битах «BUM_SET_SPEED_RGB» находится значение «BUM_SPEED_RGB_MIDDLE», то возвращаем ошибку.
+				if( data[0]==BUM_SPEED_RGB_FAST		){ return BUM_READ_FAST;	}												//	Если в битах «BUM_SET_SPEED_RGB» находится значение «BUM_SPEED_RGB_FAST»  , то возвращаем «BUM_READ_FAST».
+			}	return 0;																										//	Возвращаем ошибку.
 }																																//
 																																//
 //		Чтение данных из регистров в массив data:																				//	Возвращаемое значение:	результат чтения (true/false).

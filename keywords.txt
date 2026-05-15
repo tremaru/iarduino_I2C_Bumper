@@ -30,7 +30,17 @@
 	getLineSum	KEYWORD2
 	getLineType	KEYWORD2
 	setLineType	KEYWORD2
-	
+	setCalibrationRGB	KEYWORD2
+	setCalibrationManualRGB	KEYWORD2
+	getCalibrationManualRGB	KEYWORD2
+	getCalibrationStageRGB	KEYWORD2
+	getColorAnalog	KEYWORD2
+	getColorDigital	KEYWORD2
+	getMaxSpeed	KEYWORD2
+	setSpeedLine	KEYWORD2
+	getSpeedLine	KEYWORD2
+	setSpeedColor	KEYWORD2
+	getSpeedColor	KEYWORD2
 #	####################################################
 #	КОНСТАНТЫ:								   (LITERAL1)
 	BUM_TURN_OFF	LITERAL1
@@ -57,3 +67,8 @@
 	BUM_STAGE_READ_LN	LITERAL1
 	BUM_STAGE_WAITING	LITERAL1
 	BUM_STAGE_READ_BG	LITERAL1
+	BUM_STAGE_READ_COLOR	LITERAL1
+	BUM_READ_NO	LITERAL1
+	BUM_READ_LOW	LITERAL1
+	BUM_READ_MIDDLE	LITERAL1
+	BUM_READ_FAST	LITERAL1
