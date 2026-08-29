@@ -1,7 +1,7 @@
 //	Библиотека для работы с Trema-модулем Бампер с 9 датчиками линий, I2C-flash для Arduino:															//
 //  - с шагом 14мм: https://iarduino.ru/shop/Expansion-payments/bamper-s-7-datchikami-liniy-i2c---flash.html											//
 //  - с шагом 7мм: https://iarduino.ru/shop/Sensory-Datchiki/bamper-s-9-datchikami-liniy-s-shagom-7mm-flash-i2c.html									//
-//  Версия: 1.1.0																																		//
+//  Версия: 1.1.1																																		//
 //  Последнюю версию библиотеки Вы можете скачать по ссылке: https://iarduino.ru/file/519.html															//
 //  Подробное описание функций бибилиотеки доступно по ссылке: https://wiki.iarduino.ru/page/line-bumper/												//
 //  Библиотека является собственностью интернет магазина iarduino.ru и может свободно использоваться и распространяться!								//
@@ -21,7 +21,7 @@
 																																						//
 #include		"iarduino_I2C_Bumper_I2C.h"																												//	Подключаем библиотеку выбора реализации шины I2C.
 																																						//
-#if defined(TwoWire_h) || defined(__ARDUINO_WIRE_IMPLEMENTATION__) || defined(__AVR_ATmega328__) || defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega1284P__) || defined(__AVR_ATmega2560__) || defined(ESP8266) || defined(ESP32) || defined(ARDUINO_ARCH_RP2040) || defined(RENESAS_CORTEX_M4) // Если подключена библиотека Wire или платы её поддерживают...
+#if defined(TwoWire_h) || defined(__ARDUINO_WIRE_IMPLEMENTATION__) || defined(__AVR_ATmega328__) || defined(__AVR_ATmega328P__) || defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega1284P__) || defined(__AVR_ATmega2560__) || defined(ESP8266) || defined(ESP32) || defined(ARDUINO_ARCH_RP2040) || defined(RENESAS_CORTEX_M4) // Если подключена библиотека Wire.h или платы её поддерживают...
 #include		<Wire.h>																																//	Разрешаем использовать библиотеку Wire в данной библиотеке.
 #endif																																					//
 #if defined( iarduino_I2C_Software_h )																													//	Если библиотека iarduino_I2C_Software подключена в скетче...
@@ -199,7 +199,7 @@ class iarduino_I2C_Bumper{																																//
 								selI2C					=	new iarduino_I2C_Select;																	//	Переопределяем указатель selI2C на объект производного класса iarduino_I2C_Select.
 		}																																				//
 	/**	Пользовательские функции **/																													//
-		#if defined(TwoWire_h) || defined(__ARDUINO_WIRE_IMPLEMENTATION__) || defined(__AVR_ATmega328__) || defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega1284P__) || defined(__AVR_ATmega2560__) || defined(ESP8266) || defined(ESP32) || defined(ARDUINO_ARCH_RP2040) || defined(RENESAS_CORTEX_M4) // Если подключена библиотека Wire или платы её поддерживают...
+		#if defined(TwoWire_h) || defined(__ARDUINO_WIRE_IMPLEMENTATION__) || defined(__AVR_ATmega328__) || defined(__AVR_ATmega328P__) || defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega1284P__) || defined(__AVR_ATmega2560__) || defined(ESP8266) || defined(ESP32) || defined(ARDUINO_ARCH_RP2040) || defined(RENESAS_CORTEX_M4) // Если подключена библиотека Wire.h или платы её поддерживают...
 		bool					begin					(TwoWire* i=&Wire ){ selI2C->init(i); return _begin(); }										//	Определяем функцию инициализации модуля								(Параметр:  объект для работы с аппаратной шиной I2C).
 		#endif																																			//
 		#if defined(iarduino_I2C_Software_h)																											//
